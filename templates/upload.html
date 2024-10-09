@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>DLIS to CSV Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinha o topo do conteúdo */
+            height: 100vh;
+        }        
+        .container {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 80%;
+            max-width: 1000px;
+            margin: 20px;
+            height: auto; /* Define a altura automática */
+            box-sizing: border-box; /* Inclui padding e border no cálculo da largura/altura */
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            height: 100%;
+            overflow: hidden;
+        }
+        input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+
+        .hidden label { 
+            margin-bottom: 0;
+        }        
+        .upload-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+        }
+        form {
+            position: relative;
+            min-height: auto; /* Altera a altura mínima do formulário para permitir crescimento */
+        }
+        .upload-button:hover {
+            background-color: #0056b3;
+        }
+        .center-button {
+            display: flex;
+            justify-content: center;
+            position: relative;
+            bottom: 0;
+            left: auto;
+        }
+        .filter-group {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-group label {
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .filter-group select {
+            height: 150px;
+            overflow: auto;
+        }
+        .curves-params {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .select_curve {
+            height: 32px;
+        }
+        .select-btn {
+            width: 100px;
+        }
+        #valores_qualidade {
+            display: flex;
+        }
+        .spinner {
+            display: none;
+            border: 16px solid #f3f3f3;
+            border-top: 16px solid #3498db;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DLIS to CSV Converter</h1>
+        <form action="/" method="post" enctype="multipart/form-data">
+
+            <div class="spinner" id="spinner"></div>
+
+            <label for="input_folder">Caminho da pasta de entrada:</label>
+            <input type="text" name="input_folder" id="input_folder" placeholder="Caminho da pasta contendo o arquivo .dlis ( C:/Users/55799/Downloads/arquivos dlis )" required>
+
+            <label for="output_folder">Caminho da pasta de saída:</label>
+            <input type="text" name="output_folder" id="output_folder" placeholder="Caminho da pasta para o arquivo processado" required>
+            
+            <label for="output_format">Formato de saída:</label>
+            <select name="output_format" id="output_format" required>
+                <option value="csv">CSV</option>
+                <option value="xlsx">XLSX</option>
+            </select>
+
+            <div class="filter-group">
+                <label>Selecione os filtros a aplicar:</label>
+
+                <input type="checkbox" id="nulos" name="filtros_a_aplicar" value="nulos" onchange="toggleParameters('nulos')">
+                <label for="nulos">Filtro de Nulos</label>
+
+                <input type="checkbox" id="constantes" name="filtros_a_aplicar" value="constantes" onchange="toggleParameters('constantes')">
+                <label for="constantes">Filtro de Constantes</label>
+
+                <input type="checkbox" id="qualidade" name="filtros_a_aplicar" value="curvas" onchange="toggleParameters('qualidade')">
+                <label for="curvas">Filtro de Qualidade</label>
+                
+                <input type="checkbox" id="transicao" name="filtros_a_aplicar" value="transicao" onchange="toggleParameters('transicao')" disabled="True">
+                <label for="transicao">Filtro de Transição</label>
+
+                <input type="checkbox" id="finos" name="filtros_a_aplicar" value="finos" onchange="toggleParameters('finos')" disabled="True">
+                <label for="finos">Filtro de Finos</label>
+            </div>
+
+            <div class="curves-params">
+                <!-- Parâmetros do Filtro de Nulos -->
+                <div id="nulos_params">
+                    <label for="curvas_escolhidas_nulos">Filtro de nulos:</label>
+                    <select id="curvas_escolhidas_nulos" name="curvas_escolhidas_nulos" multiple>
+                        <!-- Opções adicionadas dinamicamente -->
+                        <option value="GR">GR</option>
+                        <option value="RESD">RESD</option>
+                        <option value="DT">DT</option>
+                        <option value="DCAL">DCAL</option>
+                        <option value="RHOB">RHOB</option>
+                        <option value="DRHO">DRHO</option>
+                        <option value="NPHI">NPHI</option>
+                        <option value="PE">PE</option>
+                    </select>
+                    <br>
+                    <div class="check-button">
+                        <button type="button" class="select-btn" onclick="selectAllCurves('curvas_escolhidas_nulos')">Selecionar Todas</button>
+                        <button type="button" class="select-btn" onclick="deselectAllCurves('curvas_escolhidas_nulos')">Desmarcar Todas</button>
+                    </div>
+                </div>
+                <!-- Parâmetros do Filtro de Constantes -->
+                <div id="constantes_params">
+                    <label for="curvas_escolhidas_constantes">Filtro de Constantes:</label>
+                    <select id="curvas_escolhidas_constantes" name="curvas_escolhidas_constantes" multiple>
+                        <!-- Opções adicionadas dinamicamente -->
+                        <option value="GR">GR</option>
+                        <option value="RESD">RESD</option>
+                        <option value="DT">DT</option>
+                        <option value="DCAL">DCAL</option>
+                        <option value="RHOB">RHOB</option>
+                        <option value="DRHO">DRHO</option>
+                        <option value="NPHI">NPHI</option>
+                        <option value="PE">PE</option>
+                    </select>
+                    <br>
+                    <div class="check-button">
+                        <button type="button" class="select-btn" onclick="selectAllCurves('curvas_escolhidas_constantes')">Selecionar Todas</button>
+                        <button type="button" class="select-btn"  onclick="deselectAllCurves('curvas_escolhidas_constantes')">Desmarcar Todas</button>
+                    </div>
+                </div>
+                <!-- Parâmetros do Filtro de Qualidade -->
+                <div id="qualidade_params">
+                    <label for="curva_selecionada">Filtro de Qualidade:</label>
+                    <select id="curva_selecionada" name="curva_selecionada" onchange="handleCurveSelection()" class="select_curve">
+                        <option value="GR">GR</option>
+                        <option value="RESD">RESD</option>
+                        <option value="DT">DT</option>
+                        <option value="DCAL">DCAL</option>
+                        <option value="RHOB">RHOB</option>
+                        <option value="DRHO">DRHO</option>
+                        <option value="NPHI">NPHI</option>
+                        <option value="PE">PE</option>
+                    </select>
+                    <div id="valores_qualidade" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap:20px; width:100%;">
+                        <label for="valor_min">Mín.:</label>
+                        <input type="number" id="valor_min" name="valor_min" onchange="atualizarDicionario()" step="0.01" style="max-width: 80px">
+                        <label for="valor_max">Máx.:</label>
+                        <input type="number" id="valor_max" name="valor_max" onchange="atualizarDicionario()" step="0.01" style="max-width: 80px">
+                    </div>           
+                </div>
+                <div>
+                    <label for="curva_selecionada">Parâmetros:</label>
+                    <div id="visualizacao_dicionario" style="border: 1px solid #ccc; width: 150px; border-radius:4px; padding:2px;">
+                        <pre id="dicionario_output"></pre>
+                    </div>     
+                </div>
+            </div>
+
+            <!-- Parâmetros do Filtro de Transição -->
+            <div id="transicao_params" class="hidden">
+                <label for="min_tamanho_transicao">Mínimo Tamanho Transição:</label>
+                <input type="number" name="min_tamanho_transicao" id="min_tamanho_transicao" value="5">
+            </div>
+
+            <!-- Parâmetros do Filtro de Finos -->
+            <div id="finos_params" class="hidden">
+                <label for="min_tamanho_finos">Mínimo Tamanho do Bloco:</label>
+                <input type="number" name="min_tamanho_finos" id="min_tamanho_finos" value="10">
+            </div>
+            <br>
+            <div class="center-button" style="margin-top: 80px">
+                <button type="submit" class="upload-button" id="upload-button">Enviar</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        let dicionarioCurvas = {};
+
+        function exibirDicionario() {
+            const dicionarioOutput = document.getElementById('dicionario_output');
+            dicionarioOutput.textContent = JSON.stringify(dicionarioCurvas, null, 2);
+        }
+
+        function selectAllCurves(selectId) {
+            const select = document.getElementById(selectId);
+            for (let i = 0; i < select.options.length; i++) {
+                select.options[i].selected = true;
+            }
+        }
+
+        function deselectAllCurves(selectId) {
+            const select = document.getElementById(selectId);
+            for (let i = 0; i < select.options.length; i++) {
+                select.options[i].selected = false;
+            }
+        }
+
+        function handleCurveSelection() {
+            const curvaSelecionada = document.getElementById('curva_selecionada').value;
+            const valoresContainer = document.getElementById('valores_qualidade');
+            
+            const curva = dicionarioCurvas[curvaSelecionada] || { min: null, max: null };
+            document.getElementById('valor_min').value = curva.min;
+            document.getElementById('valor_max').value = curva.max;
+
+            if (curvaSelecionada) {
+                valoresContainer.classList.remove('hidden');
+                dicionarioCurvas[curvaSelecionada] = { min: curva.min, max: curva.max };
+            } else {
+                valoresContainer.classList.add('hidden');
+            }
+            exibirDicionario();
+        }
+
+        function atualizarDicionario() {
+            const curvaSelecionada = document.getElementById('curva_selecionada').value;
+            const valorMin = parseFloat(document.getElementById('valor_min').value);
+            const valorMax = parseFloat(document.getElementById('valor_max').value);
+    
+            if (curvaSelecionada && !isNaN(valorMin) && !isNaN(valorMax)) {
+                dicionarioCurvas[curvaSelecionada] = { min: valorMin, max: valorMax };
+            }
+            exibirDicionario();
+        }
+        function enviarDadosParaBackend() {
+            const curvaSelecionada = document.getElementById('curva_selecionada').value;
+            const valorMin = parseFloat(document.getElementById('valor_min').value);
+            const valorMax = parseFloat(document.getElementById('valor_max').value);
+            
+            if (curvaSelecionada && !isNaN(valorMin) && !isNaN(valorMax)) {
+                dicionarioCurvas[curvaSelecionada] = { min: valorMin, max: valorMax };
+            }
+        
+            // Enviar dicionarioCurvas para o backend
+            fetch('/upload_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dicionarioCurvas)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Resposta do servidor:', data))
+            .catch(error => console.error('Erro:', error));
+        }
+        document.getElementById('upload-button').addEventListener('click', enviarDadosParaBackend);
+    </script>
+    <script>
+        document.getElementById('processing-form').onsubmit = function() {
+            document.getElementById('spinner').style.display = 'block';
+            document.getElementById('processing-form').classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
